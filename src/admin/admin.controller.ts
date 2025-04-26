@@ -26,4 +26,12 @@ export class EventFormController {
     // Call the service method to retrieve event data by email
     return this.AdminService.findAllEventsByUserType(userType);
   }
+
+  @Post('updateStatus')
+  
+  async getAdminAction(@Body() body: { id: string; eventId: string; eventName: string; userEmail:string, status:string}) {
+    const { id, eventId, eventName, userEmail, status } = body;
+    return this.AdminService.updateQueryData(Number(id),Number(eventId),eventName,userEmail,status);
+  }
 }
+
