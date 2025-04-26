@@ -31,4 +31,19 @@ export class AdminService {
     const allEvents = await this.eventRepository.query(query, [userType]);
     return allEvents;
   }
+
+  async updateQueryData(id: number,  eventId:number, eventName:string, userEmail:string, status:string): Promise<any>{
+    const query = `
+      UPDATE event
+      SET status = ?
+      WHERE id = ? 
+        AND eventId = ? 
+        AND eventName = ? 
+        AND userEmail = ?;
+
+    `;
+
+    const allEvents = await this.eventRepository.query(query, [status,id,eventId,eventName,userEmail]);
+    return allEvents;
+  }
 }
