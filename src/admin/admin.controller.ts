@@ -15,4 +15,15 @@ export class EventFormController {
   async getAllEvents() {
     return await this.AdminService.findAll();
   }
+
+  @Post('adminApprove')
+  async getEventDataByUserType(@Body() body: { userType: string }) {
+    const { userType } = body;
+    if (!userType) {
+      throw new Error("UserType is required to fetch event data.");
+    }
+    
+    // Call the service method to retrieve event data by email
+    return this.AdminService.findAllEventsByUserType(userType);
+  }
 }
