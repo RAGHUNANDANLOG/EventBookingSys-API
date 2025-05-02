@@ -1,4 +1,3 @@
-// src/admin-user/admin-user.controller.ts
 import { Controller, Post, Body } from '@nestjs/common';
 import { AdminUserService } from './admin-login.service';
 import { LoginDto } from './dto/login.dto';
