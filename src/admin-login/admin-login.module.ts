@@ -1,4 +1,3 @@
-// src/admin-user/admin-user.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminUser } from './entities/admin-login.entity';

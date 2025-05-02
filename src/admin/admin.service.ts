@@ -46,4 +46,33 @@ export class AdminService {
     const allEvents = await this.eventRepository.query(query, [status,id,eventId,eventName,userEmail]);
     return allEvents;
   }
+
+  async updateEventData(eventid: number, title: string, location: string, date:string, image:string){
+    const EventUpdateQuery = `
+      UPDATE admin
+      SET
+      title = ? ,
+      location = ? ,
+      image = ? ,
+      date = ?
+      WHERE eventid = ?
+    `;
+
+    const updateEvents = await this.eventRepository.query(EventUpdateQuery, [title,location,image,date,eventid]);
+    return updateEvents;
+  }
+
+  async addEventData(title: string, location: string, date: string, image: string) {
+    const addEventQuery = `
+      INSERT INTO admin (title, location, image, date)
+      VALUES (?, ?, ?, ?)
+    `;
+    const addEvent = await this.eventRepository.query(addEventQuery, [title, location, image, date]);
+    return addEvent;  
+  }
+
+  async deleteEvent(eventid: number) {
+    const query = `DELETE FROM admin WHERE eventid = ?`;
+    return this.eventRepository.query(query, [eventid]);
+  }
 }
