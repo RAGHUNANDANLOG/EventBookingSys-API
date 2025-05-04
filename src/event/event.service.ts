@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable } from '@nestjs/common';
+import { ConsoleLogger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { CreateEventFormDto } from './create-event.dto';
@@ -11,25 +11,35 @@ export class EventFormService {
     private eventRepository: Repository<Event>,
   ) {}
 
-  async createOrUpdateEvent(createEventFormDto: CreateEventFormDto): Promise<Event> {
+  async createOrUpdateEvent(createEventFormDto: CreateEventFormDto): Promise<Event | undefined> {
     const { userEmail, eventName} = createEventFormDto;
   
     const existingEvent = await this.eventRepository.findOne({
       where: { userEmail, eventName },
     });
   
-    if (existingEvent && existingEvent.status !== 'submitted') {
+    if (existingEvent) {
+      if (existingEvent.status === 'submitted' || existingEvent.status === 'approve') {
+        throw new HttpException(
+          'Already booked,Please check "Get Ticket" from the sidebar!',
+          HttpStatus.BAD_REQUEST
+        );
+      } 
+      else if (existingEvent && existingEvent.status !== 'submitted'  && existingEvent.status !== 'approve') {
       // Update existing entry
       Object.assign(existingEvent, {
         ...createEventFormDto,
         status: 'event details', // set internally
+        createdAt: new Date(),
       });
       return await this.eventRepository.save(existingEvent);
+      }
     } else {
       // Create new entry with status
       const newEvent = this.eventRepository.create({
         ...createEventFormDto,
         status: 'event details', // set internally
+        createdAt: new Date(),
       });
       return await this.eventRepository.save(newEvent);
     }
@@ -62,13 +72,13 @@ export class EventFormService {
   
       // Set status to upload document
       existingEvent.status = 'upload document';
-  
+      existingEvent.createdAt = new Date();
       return this.eventRepository.save(existingEvent);
     }
 
-    async saveQrCodeData(userEmail: string, eventId: number, qrCode: string) {
+    async saveQrCodeData(userEmail: string, eventId: number, qrCode: string, userType: string) {
       const event = await this.eventRepository.findOne({
-        where: { eventId, userEmail },
+        where: { eventId, userEmail, userType },
       });
   
       if (!event) {
@@ -78,24 +88,21 @@ export class EventFormService {
       // Generate ticket prefix like TICKET-20250423
       const now = new Date();
       const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0'); // month is 0-indexed
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
-      const prefix = `TICKET-${yyyy}${mm}${dd}`;
-  
-      // Find how many tickets already exist for today
+      const datePart = `${dd}${mm}${yyyy}`;      
+      const prefix = `EVE-${datePart}${eventId}`;
       const todayTickets = await this.eventRepository.count({
         where: {
           ticketNo: Like(`${prefix}%`),
         },
       });
-  
-      const ticketNo = `${prefix}${String(todayTickets + 1).padStart(3, '0')}`;
-  
+      const ticketNo = `${prefix}${String(todayTickets + 1).padStart(2, '0')}`;
       // Update the event
       event.qrCode = qrCode;
       event.status = 'submitted';
       event.ticketNo = ticketNo;
-  
+      event.createdAt = new Date();
       return await this.eventRepository.save(event);
     }
   
@@ -115,8 +122,9 @@ export class EventFormService {
         JOIN member 
           ON member.userEmail = event.userEmail 
           AND member.eventId = event.eventId
+          AND member.userType = event.userType
         WHERE event.userEmail = ?
-        ORDER BY event.eventDate DESC
+        ORDER BY event.createdAt DESC
       `;
     
       const allEvents = await this.eventRepository.query(query, [userEmail]);

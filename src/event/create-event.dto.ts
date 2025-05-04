@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsOptional,
   IsNotEmpty,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateEventFormDto {
@@ -68,5 +69,4 @@ export class CreateEventFormDto {
   @IsString()
   @IsNotEmpty()
   idNumber: string;
-
 }
